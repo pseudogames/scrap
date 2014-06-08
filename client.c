@@ -1,7 +1,14 @@
 #include <SDL.h>
 #include <stdio.h>
+#include <time.h>
 #include "sdnoise1234.h"
 
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
+#define CLAMP(a,b,c) ((a) < (b) ? (b) : (a) > (c) ? (c) : (a) )
+#define DOT2(x0,y0, x1,y1) (((x0)*(x1))+((y0)*(y1)))
+#define DOT3(x0,y0,z0, x1,y1,z1) (((x0)*(x1))+((y0)*(y1))+((z0)*(z1)))
+#define LEN3(x0,y0,z0) sqrt(DOT3(x0,y0,z0, x0,y0,z0))
 
 typedef struct 
 {
@@ -17,10 +24,13 @@ int main (int argc, char *argv[])
 {
 	SDL_Window *win;
 	SDL_Renderer *ren;
-	int screen_width = 640;
-	int screen_height = 480;
-	int map_width = 1024; 
-	int map_height = 768;
+	int screen_width = 320;
+	int screen_height = 240;
+	int map_width = 600; 
+	int map_height = 600;
+	int map_depth = 16;
+
+	srand(time(NULL));
 
 	SDL_Init(SDL_INIT_VIDEO);
 
@@ -56,47 +66,110 @@ int main (int argc, char *argv[])
 			map_width, map_height);
 
 	Uint32 *colormap = malloc( map_width * map_height * sizeof (Uint32) );
-	float *lightmap = malloc( map_width * map_height * sizeof (float) );
-	float *heightmap = malloc( map_width * map_height * sizeof (float) );
+	float *lightmap  = malloc( map_width * map_height * sizeof (float) );
+	float *density   = malloc( map_width * map_height * map_depth * sizeof (float) );
+	float *normalmap = malloc( map_width * map_height * map_depth * 3 * sizeof (float) );
+	int *hitmap      = malloc( map_width * map_height * map_depth * sizeof (int) );
 
-	#define MIN(a,b) ((a) < (b) ? (a) : (b))
-	#define MAX(a,b) ((a) > (b) ? (a) : (b))
-	#define CLAMP(a,b,c) ((a) < (b) ? (b) : (a) > (c) ? (c) : (a) )
+	memset(lightmap, 0, map_width * map_height * sizeof (float));
+
 	{
-		int i=0;
-		int x, y;
-		float l0=999999999, l1=0;
-		float h0=999999999, h1=0;
-		for(y=0; y < map_height; y++) {
-			for(x=0; x < map_width; x++, i++) {
-				int o, n_oct = 8;
-				float h=0, dx=0,dy=0;
-				for(o=0; o<n_oct; o++) {
-					float _dx, _dy;
-					float f = (0.5 / (1+o));
-					h += sdnoise2((float)x/(100.0/(1+o)), (float)y/(100.0/(1+o)), &_dx, &_dy) * f;
-					dx += _dx * f;
-					dy += _dy * f;
+		int x, y, z;
+		
+		for(z=0; z < map_depth; z++) {
+			for(y=0; y < map_height; y++) {
+				for(x=0; x < map_width; x++) {
+					int xyz = x + y * map_width + z * map_width * map_height;
+					int xyzk = 3 * xyz;
+					
+					int o, num_octaves = 4;
+					float d = 0;
+					float dx = 0, dy = 0, dz = 0;
+					for(o=0; o < num_octaves; o++) {
+						float odx, ody, odz;
+						float f = 0.5/(1+o);
+						d += sdnoise3(
+							(float)x/((float)screen_width/(4*o+1)),
+							(float)y/((float)screen_width/(4*o+1)),
+							(float)z/((float)screen_width/(4*o+1)),
+							&odx, &ody, &odz
+						) / f;
+						dx += odx / f;
+						dy += ody / f;
+						dz += odz / f;
+					}
+
+					normalmap[xyzk+0] = dx;
+					normalmap[xyzk+1] = dy;
+					normalmap[xyzk+2] = dz;
+
+					float len = LEN3(
+						normalmap[xyzk+0],
+						normalmap[xyzk+1],
+						normalmap[xyzk+2]
+					);
+					if(len) {
+						normalmap[xyzk+0] /= len;
+						normalmap[xyzk+1] /= len;
+						normalmap[xyzk+2] /= len;
+					}
+
+					density[xyz] = MAX(0, -1 + d + 2*z/(float)map_depth); 
+
+					if(x==10 && y==10) {
+						printf("z %d d %f d %f z %f\n", z, d, density[xyz], 2*z/(float)map_depth);
+						fflush(stdout);
+					}
+					hitmap[xyz] = -1;
 				}
-				float l = dx + dy;
-				l0 = MIN(l, l0);
-				l1 = MAX(l, l1);
-				h0 = MIN(h, h0);
-				h1 = MAX(h, h1);
 
-				lightmap[i] = l;
-				heightmap[i] = h;
 			}
-
 		}
 
-		i=0;
 		for(y=0; y < map_height; y++) {
-			for(x=0; x < map_width; x++, i++) {
-				lightmap[i]  = (lightmap[i]  - l0) / (l1 - l0);
-				heightmap[i] = (heightmap[i] - h0) / (h1 - h0);
-				int c = lightmap[i] * 0xff;
-				colormap[i] = c << 16 | c << 8 | c;
+			for(x=0; x < map_width; x++) {
+				int xy = x + y * map_width;
+				lightmap[xy] = 0;
+				for(z=0; z < map_depth; z++) {
+					int xyz = x + y * map_width + z * map_width * map_height;
+					int xyzk = 3 * xyz;
+					if(density[xyz]) {
+#if 0
+						int lx=map_width/2, ly=map_height/2, lz=0;
+						float vlx = lx-x;
+						float vly = ly-y;
+						float vlz = lz-z;
+						float vll = LEN3(vlx, vly, vlz);
+						if(vll) {
+							vlx /= vll;
+							vly /= vll;
+							vlz /= vll;
+						}
+
+
+						float dot = DOT3(
+							vlx,
+							vly,
+							vlz,
+							normalmap[xyzk+0],
+							normalmap[xyzk+1],
+							normalmap[xyzk+2]
+						);
+#else
+						float dot = (
+							normalmap[xyzk+0] * 0.3 + 
+							normalmap[xyzk+1] * 0.6 + 
+							normalmap[xyzk+2] * 0.1
+						);
+#endif
+						lightmap[xy] = 0.5 + 0.5 * dot;
+						break;
+					}
+
+				}
+
+				int c = lightmap[xy] * 0xff;
+				colormap[xy] = c << 16 | c << 8 | c;
 			}
 		}
 		
@@ -299,7 +372,9 @@ int main (int argc, char *argv[])
 		if(delay > 0) SDL_Delay(delay);
 	}
 
-	free(heightmap);
+	free(hitmap);
+	free(density);
+	free(normalmap);
 	free(lightmap);
 	free(colormap);
 	SDL_DestroyTexture(map);
