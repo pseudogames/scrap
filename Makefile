@@ -1,12 +1,10 @@
 
-CFLAGS:=-std=c99 -Wall -Werror -ggdb
+CFLAGS:=-std=c99 -Wall -Werror -ggdb -O0
 
 ifeq ("$(MSYSTEM)","MINGW32")
-PREFIX=/d/mingw-w64/x86_64-4.9.0-posix-seh-rt_v3-rev2/mingw64
-PATH:=$(PREFIX)/bin:$(PATH)
-CFLAGS+=-I$(PREFIX)/include -I/d/lib/SDL2-2.0.3/x86_64-w64-mingw32/include/SDL2 -Dmain=SDL_main
-LDFLAGS=-mconsole -static -L/d/mingw-w64/x86_64-4.9.0-posix-seh-rt_v3-rev2/mingw64/x86_64-w64-mingw32/lib -L/d/lib/SDL2-2.0.3/x86_64-w64-mingw32/lib
-LIBS=-lmingw32 -lSDL2main -lSDL2 -Wl,--no-undefined -lm -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid -lopengl32 -lpthread
+CFLAGS+=-I./include -Dmain=SDL_main
+LDFLAGS=-L./lib -mconsole -static
+LIBS=-lmingw32 -lSDL2main -lSDL2 -Wl,--no-undefined -lm -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid -lglew32 -lglu32 -lopengl32 -lpthread
 SUFFIX=.exe
 endif
 
@@ -18,7 +16,7 @@ endif
 CC=gcc
 SERVER_OBJS=server.o
 CLIENT_OBJS=client.o sdnoise1234.o
-TEST_OBJS=test.o sdnoise1234.o
+TEST_OBJS=test.o raycast.o sdnoise1234.o warn.o tff.o head.o transform.o
 SERVER=rts-px-server$(SUFFIX)
 CLIENT=rts-px$(SUFFIX)
 TEST=test$(SUFFIX)
@@ -27,8 +25,17 @@ TEST=test$(SUFFIX)
 
 all: $(TEST) # $(SERVER) $(CLIENT) 
 
+DEPS_H_SRCS := $(wildcard *.h)
+DEPS_C_SRCS := $(wildcard *.c)
+DEPS = .deps
+
+$(DEPS): $(DEPS_C_SRCS) $(DEPS_H_SRCS)
+	$(CC) $(CFLAGS) -MM $(DEPS_C_SRCS) > $@
+
+-include $(DEPS)
+
 clean:
-	rm -fv *.o $(SERVER) $(CLIENT) $(TEST)
+	rm -fv *.o $(SERVER) $(CLIENT) $(TEST) $(DEPS)
 
 $(CLIENT): $(CLIENT_OBJS)
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
@@ -38,3 +45,5 @@ $(SERVER): $(SERVER_OBJS)
 
 $(TEST): $(TEST_OBJS)
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
+
+

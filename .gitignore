@@ -1,3 +1,6 @@
 *.exe
 *.o
-1
+/1
+.deps
+head.*
+tff.*
