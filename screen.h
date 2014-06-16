@@ -1,7 +1,7 @@
 #ifndef __SCREEN_H
 #define __SCREEN_H
 
-#include "SDL.h"
+#include "SDL2/SDL.h"
 #include "transform.h"
 
 typedef struct {

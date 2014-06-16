@@ -16,14 +16,14 @@ endif
 CC=gcc
 SERVER_OBJS=server.o
 CLIENT_OBJS=client.o sdnoise1234.o
-TEST_OBJS=test.o raycast.o sdnoise1234.o warn.o tff.o head.o transform.o
+TEST_OBJS=test.o raycast.o sdnoise1234.o warn.o transform.o
 SERVER=rts-px-server$(SUFFIX)
 CLIENT=rts-px$(SUFFIX)
 TEST=test$(SUFFIX)
 
 .PHONY: all clean system
 
-all: $(TEST) # $(SERVER) $(CLIENT) 
+all: $(TEST) $(SERVER) $(CLIENT) 
 
 DEPS_H_SRCS := $(wildcard *.h)
 DEPS_C_SRCS := $(wildcard *.c)
@@ -38,12 +38,9 @@ clean:
 	rm -fv *.o $(SERVER) $(CLIENT) $(TEST) $(DEPS)
 
 $(CLIENT): $(CLIENT_OBJS)
-	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
-
 $(SERVER): $(SERVER_OBJS)
-	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
-
 $(TEST): $(TEST_OBJS)
+$(TEST) $(SERVER) $(CLIENT):
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
 
 
