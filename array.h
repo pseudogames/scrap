@@ -3,15 +3,25 @@
 
 typedef struct { double x,y;     } Vec2d;
 typedef struct { double x,y,z;   } Vec3d;
-typedef struct { int     x,y;     } Vec2i;
-typedef struct { int     x,y,z;   } Vec3i;
-typedef struct { int     x,y,z,w; } Vec4i;
+typedef struct { int    x,y;     } Vec2i;
+typedef struct { int    x,y,z;   } Vec3i;
+typedef struct { int    x,y,z,w; } Vec4i;
 
 typedef struct {
 	Vec3d pos;
 	Vec2d angle;
 	Vec3d scale;
 } Transform;
+
+typedef struct {
+	Vec3i size;
+	unsigned char *data;
+} Vol1u;
+
+void vol1u_init(Vol1u *vol, int x, int y, int z);
+void vol1u_free(Vol1u *vol);
+unsigned char vol1u_get(Vol1u *vol, int x, int y, int z);
+void vol1u_set(Vol1u *vol, int x, int y, int z, unsigned char d);
 
 double mind(double a, double b);
 double maxd(double a, double b);

@@ -16,7 +16,7 @@ endif
 CC=gcc
 SERVER_OBJS=server.o
 CLIENT_OBJS=client.o sdnoise1234.o
-TEST_OBJS=test.o raycast.o sdnoise1234.o warn.o transform.o
+TEST_OBJS=test.o display.o array.o sdnoise1234.o log.o 
 SERVER=rts-px-server$(SUFFIX)
 CLIENT=rts-px$(SUFFIX)
 TEST=test$(SUFFIX)
