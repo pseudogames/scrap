@@ -9,7 +9,7 @@
 int running = 1;
 
 typedef struct {
-	Vol1u volume;
+	Vol volume;
 	int dirty;
 } Map;
 
@@ -68,7 +68,7 @@ int main (int argc, char *argv[])
 	display_init(&display, 640, 480);
 
 	Map map;
-	vol1u_init(&map.volume, display.size.x*2, display.size.y*2, 32);
+	vol_init(&map.volume, display.size.x*2, display.size.y*2, 32, 1);
 	display_volume(&display, &map.volume);
 
 	pthread_t creator;
@@ -136,7 +136,7 @@ int main (int argc, char *argv[])
 		if(delay > 0) SDL_Delay(delay);
 	}
 
-	vol1u_free(&map.volume);
+	vol_free(&map.volume);
 	display_free(&display);
 	SDL_Quit();
 	return 0;

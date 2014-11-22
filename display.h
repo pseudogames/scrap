@@ -13,7 +13,6 @@
 
 typedef struct {
 	SDL_GLContext ctx;
-
 	GLuint volTexObj;
 } GL;
 
@@ -26,7 +25,7 @@ typedef struct {
 
 void display_init(Display *display, int w, int h);
 void display_viewport(Display *display);
-void display_volume(Display *display, Vol1u *map);
+void display_volume(Display *display, Vol *map);
 void display_render(Display *display);
 void display_free(Display *display);
 

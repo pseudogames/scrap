@@ -5,7 +5,7 @@
 #include <GL/glext.h>
 #include <stdio.h>
 #include "raycast.h"
-#include "warn.h"
+#include "log.h"
 #include "tff.h"
 
 //#define HEAD

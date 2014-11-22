@@ -32,7 +32,11 @@ void display_init(Display *display, int w, int h)
 	
 	GLenum err = glewInit();
 	if (GLEW_OK != err) {
-		log_fatal(LOG, 2, "Error: %d, %s\n", err, glewGetErrorString(err));
+		log_fatal(LOG, 2, "glewInit: %d, %s\n", err, glewGetErrorString(err));
+	}
+
+	if (!GLEW_ARB_vertex_shader || !GLEW_ARB_fragment_shader) {
+		log_fatal(LOG, 3, "GLEW_ARB_*_shader not supported\n");
 	}
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -41,8 +45,14 @@ void display_init(Display *display, int w, int h)
 	display_viewport(display);
 }
 
-void display_volume(Display *display, Vol1u *vol)
+void display_volume(Display *display, Vol *vol) // expecting vol1u
 {
+	int gl_vol_elem_size = 
+		vol->elem_size == 1 ? GL_UNSIGNED_BYTE : 
+		vol->elem_size == 2 ? GL_UNSIGNED_SHORT :
+		vol->elem_size == 3 ? GL_3_BYTES :
+		vol->elem_size == 4 ? GL_UNSIGNED_INT : 0;
+
 	glGenTextures(1, &display->gl.volTexObj);
 
 	// bind 3D texture target
@@ -59,7 +69,7 @@ void display_volume(Display *display, Vol1u *vol)
 		vol->size.x, 
 		vol->size.y, 
 		vol->size.z, 
-		0, GL_LUMINANCE, GL_UNSIGNED_BYTE, 
+		0, GL_LUMINANCE, gl_vol_elem_size, 
 		(GLubyte *)vol->data);
 
 }

@@ -15,13 +15,14 @@ typedef struct {
 
 typedef struct {
 	Vec3i size;
+	int elem_size;
 	unsigned char *data;
-} Vol1u;
+} Vol;
 
-void vol1u_init(Vol1u *vol, int x, int y, int z);
-void vol1u_free(Vol1u *vol);
-unsigned char vol1u_get(Vol1u *vol, int x, int y, int z);
-void vol1u_set(Vol1u *vol, int x, int y, int z, unsigned char d);
+void vol_init(Vol *vol, int x, int y, int z, int elem_len);
+void *vol_ptr(Vol *vol, int x, int y, int z);
+void vol_free(Vol *vol);
+
 
 double mind(double a, double b);
 double maxd(double a, double b);
