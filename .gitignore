@@ -6,3 +6,4 @@ head.*
 tff.*
 rts-px
 rts-px-server
+*.pid
